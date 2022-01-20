@@ -1,0 +1,30 @@
+---
+output: html_document
+---
+
+```{r SETUP_CHUNK, message = F, warnotinng = F, include = F}
+library(tidyverse)
+library(magrittr)
+
+`%notin%` = Negate(`%in%`)
+
+df = data.frame(scan("wordle_answers.txt", character(), quote = "")) |>
+  set_colnames("word") |>
+  mutate(first = substr(word, 1, 1),
+         second = substr(word, 2, 2),
+         third = substr(word, 3, 3),
+         fourth = substr(word, 4, 4),
+         fifth = substr(word, 5, 5))
+```
+
+```{r MODIFY_CHUNK}
+no = c()
+
+df |>
+  filter(first %notin% no &
+           second %notin% no &
+           third %notin% no &
+           fourth %notin% no &
+           fifth %notin% no)
+```
+
