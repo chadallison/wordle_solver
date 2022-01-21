@@ -1,4 +1,6 @@
 ---
+title: "wordle solver"
+author: "chaddio"
 output: html_document
 ---
 
@@ -8,7 +10,8 @@ library(magrittr)
 
 `%notin%` = Negate(`%in%`)
 
-df = data.frame(scan("wordle_answers.txt", character(), quote = "")) |>
+df = data.frame(scan("https://gist.githubusercontent.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b/raw/a9e55d7e0c08100ce62133a1fa0d9c4f0f542f2c/wordle-answers-alphabetical.txt",
+                     character(), quote = "")) |>
   set_colnames("word") |>
   mutate(first = substr(word, 1, 1),
          second = substr(word, 2, 2),
@@ -27,4 +30,3 @@ df |>
            fourth %notin% no &
            fifth %notin% no)
 ```
-
