@@ -1,2 +1,2 @@
-# wordle_solver
+# wordle solver
 for solving wordle because i'm stupid and need help on it
