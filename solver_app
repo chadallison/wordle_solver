@@ -1,16 +1,12 @@
 ---
-title: "wordle solver"
-author: "chaddio"
 output: html_document
 ---
 
-```{r SETUP_CHUNK, message = F, warning = F, include = F}
+```{r setup chunk, message = F, warning = F, include = F}
 library(tidyverse)
 library(magrittr)
 
-`%notin%` = Negate(`%in%`)
-
-df = data.frame(scan("https://tinyurl.com/wordlesolver",
+df = data.frame(scan("wordle_answers.txt",
                      character(), quote = "")) |>
   set_colnames("word") |>
   mutate(first = substr(word, 1, 1),
@@ -20,13 +16,41 @@ df = data.frame(scan("https://tinyurl.com/wordlesolver",
          fifth = substr(word, 5, 5))
 ```
 
-```{r MODIFY_CHUNK}
+```{r modify chunk}
 no = c()
 
 df |>
-  filter(first %notin% no &
-           second %notin% no &
-           third %notin% no &
-           fourth %notin% no &
-           fifth %notin% no)
+  filter(!first %in% no,
+         !second %in% no,
+         !third %in% no,
+         !fourth %in% no,
+         !fifth %in% no)
 ```
+
+```{r eda}
+alphabet = c("a", "b", "c", "d", "e",
+             "f", "g", "h", "i", "j",
+             "k", "l", "m", "n", "o",
+             "p", "q", "r", "s", "t",
+             "u", "v", "w", "x", "y", "z")
+
+freq = data.frame(letter = rep(NA, 26), frequency = rep(NA, 26))
+
+for (i in 1:length(alphabet)) {
+  
+  letter = alphabet[i]
+  
+  num = df |>
+    mutate(count = str_detect(word, letter)) |>
+    summarise(sum = sum(count)) |>
+    pull(sum)
+  
+  freq$letter[i] = letter
+  freq$frequency[i] = num
+  
+}
+
+freq |>
+  arrange(desc(frequency))
+```
+
