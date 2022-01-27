@@ -17,14 +17,20 @@ df = data.frame(scan("wordle_answers.txt",
 ```
 
 ```{r modify chunk}
-no = c()
+no = c() # str_detect(word, "")
 
-df |>
+df = df |>
   filter(!first %in% no,
          !second %in% no,
          !third %in% no,
          !fourth %in% no,
          !fifth %in% no)
+
+words = df |>
+  pull(word)
+
+paste("possible words:", length(words))
+sample(words, 1)
 ```
 
 ```{r eda}
@@ -53,4 +59,68 @@ for (i in 1:length(alphabet)) {
 freq |>
   arrange(desc(frequency))
 ```
+
+```{r most common for each letter}
+first = df |>
+  count(first) |>
+  arrange(desc(n)) |>
+  head(1) |>
+  pull(first)
+
+paste("most common first:", first)
+
+second = df |>
+  count(second) |>
+  arrange(desc(n)) |>
+  head(1) |>
+  pull(second)
+
+paste("most common second:", second)
+
+third = df |>
+  count(third) |>
+  arrange(desc(n)) |>
+  head(1) |>
+  pull(third)
+
+paste("most common third:", third)
+
+fourth = df |>
+  count(fourth) |>
+  arrange(desc(n)) |>
+  head(1) |>
+  pull(fourth)
+
+paste("most common fourth:", fourth)
+
+fifth = df |>
+  count(fifth) |>
+  arrange(desc(n)) |>
+  head(1) |>
+  pull(fifth)
+
+paste("most common fifth:", fifth)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
