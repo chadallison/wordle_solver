@@ -4,33 +4,58 @@ output: html_document
 
 ```{r setup chunk, message = F, warning = F, include = F}
 library(tidyverse)
+library(lubridate)
 library(magrittr)
+
+past.solutions = read.table("all_wordle_solutions.txt") |>
+  set_colnames(c("month", "day", "year", "x", "day_num", "word")) |>
+  mutate(word = str_to_lower(word)) |>
+  mutate(month = case_when(month == "Jan" ~ 1, month == "Feb" ~ 2, month == "Mar" ~ 3,
+                           month == "Apr" ~ 4, month == "May" ~ 5, month == "Jun" ~ 6,
+                           month == "Jul" ~ 7, month == "Aug" ~ 8, month == "Sep" ~ 9,
+                           month == "Oct" ~ 10, month == "Nov" ~ 11, month == "Dec" ~ 12),
+         date = mdy(paste(month, day, year, sep = "-"))) |>
+  filter(date <= Sys.Date() - 1) |>
+  pull(word)
 
 df = data.frame(scan("wordle_answers.txt",
                      character(), quote = "")) |>
   set_colnames("word") |>
-  mutate(first = substr(word, 1, 1),
-         second = substr(word, 2, 2),
-         third = substr(word, 3, 3),
-         fourth = substr(word, 4, 4),
-         fifth = substr(word, 5, 5))
+  mutate(one = substr(word, 1, 1),
+         two = substr(word, 2, 2),
+         three = substr(word, 3, 3),
+         four = substr(word, 4, 4),
+         five = substr(word, 5, 5)) |>
+  filter(!word %in% past.solutions)
 ```
 
 ```{r modify chunk}
 no = c() # str_detect(word, "")
 
 df = df |>
-  filter(!first %in% no,
-         !second %in% no,
-         !third %in% no,
-         !fourth %in% no,
-         !fifth %in% no)
+  filter(!one %in% no,
+         !two %in% no,
+         !three %in% no,
+         !four %in% no,
+         !five %in% no)
 
 words = df |>
   pull(word)
 
 paste("possible words:", length(words))
-sample(words, 1)
+paste("random word:", sample(words, 1))
+
+"-----------------------------------"
+
+non.repeats = df |>
+  filter(one != two & one != three & one != four & one != five,
+         two != three & two != four & two != five,
+         three != four & three != five,
+         four != five) |>
+  pull(word)
+
+paste("possible non-repeating words:", length(non.repeats))
+paste("random non-repeating word:", sample(non.repeats, 1))
 ```
 
 ```{r eda}
@@ -62,47 +87,107 @@ freq |>
 
 ```{r most common for each letter}
 first = df |>
-  count(first) |>
+  count(one) |>
   arrange(desc(n)) |>
   head(1) |>
-  pull(first)
+  pull(one)
 
 paste("most common first:", first)
 
 second = df |>
-  count(second) |>
+  count(two) |>
   arrange(desc(n)) |>
   head(1) |>
-  pull(second)
+  pull(two)
 
 paste("most common second:", second)
 
 third = df |>
-  count(third) |>
+  count(three) |>
   arrange(desc(n)) |>
   head(1) |>
-  pull(third)
+  pull(three)
 
 paste("most common third:", third)
 
 fourth = df |>
-  count(fourth) |>
+  count(four) |>
   arrange(desc(n)) |>
   head(1) |>
-  pull(fourth)
+  pull(four)
 
 paste("most common fourth:", fourth)
 
 fifth = df |>
-  count(fifth) |>
+  count(five) |>
   arrange(desc(n)) |>
   head(1) |>
-  pull(fifth)
+  pull(five)
 
 paste("most common fifth:", fifth)
 ```
 
+```{r}
+read.table("wordle_0a.txt", sep = ",") |>
+  pivot_longer(everything(), names_to = "name", values_to = "vals")
+```
 
+
+```{r}
+library(tidyverse)
+library(httr)
+
+headers = c(
+  `Connection` = 'keep-alive',
+  `Accept` = 'application/json, text/plain, */*',
+  `x-nba-stats-token` = 'true',
+  `X-NewRelic-ID` = 'VQECWF5UChAHUlNTBwgBVw==',
+  `User-Agent` = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36',
+  `x-nba-stats-origin` = 'stats',
+  `Sec-Fetch-Site` = 'same-origin',
+  `Sec-Fetch-Mode` = 'cors',
+  `Referer` = 'https://stats.nba.com/players/leaguedashplayerbiostats/',
+  `Accept-Encoding` = 'gzip, deflate, br',
+  `Accept-Language` = 'en-US,en;q=0.9'
+)
+
+url = "https://stats.nba.com/stats/shotchartdetail?AheadBehind=&CFID=155&CFPARAMS=2021-22&ClutchTime=&Conference=&ContextFilter=&ContextMeasure=FGA&DateFrom=&DateTo=&Division=&EndPeriod=10&EndRange=28800&GROUP_ID=&GameEventID=&GameID=&GameSegment=&GroupID=&GroupMode=&GroupQuantity=5&LastNGames=0&LeagueID=00&Location=&Month=0&OnOff=&OppPlayerID=&OpponentTeamID=0&Outcome=&PORound=0&Period=0&PlayerID=0&PlayerID1=&PlayerID2=&PlayerID3=&PlayerID4=&PlayerID5=&PlayerPosition=&PointDiff=&Position=&RangeType=0&RookieYear=&Season=2021-22&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&StartPeriod=1&StartRange=0&StarterBench=&TeamID=1610612741&VsConference=&VsDivision=&VsPlayerID1=&VsPlayerID2=&VsPlayerID3=&VsPlayerID4=&VsPlayerID5=&VsTeamID="
+
+res = httr::GET(url = url, httr::add_headers(.headers = headers))
+json_resp = jsonlite::fromJSON(content(res, "text"))
+df = data.frame(json_resp$resultSets$rowSet[1])
+colnames(df) = json_resp[["resultSets"]][["headers"]][[1]]
+
+df |>
+  select(-GRID_TYPE) |>
+  mutate(SHOT_DISTANCE = as.numeric(SHOT_DISTANCE),
+         SHOT_MADE_FLAG = as.numeric(SHOT_MADE_FLAG)) |>
+  group_by(SHOT_DISTANCE) |>
+  summarise(MakePer = round(sum(SHOT_MADE_FLAG) / n(), 3)) |>
+  ggplot(aes(SHOT_DISTANCE, MakePer)) +
+  geom_col()
+```
+
+```{r}
+data.frame(Player = c(rep("Donovan Mitchell", 5), rep("Devin Booker", 5)),
+           Season = rep(c(2018, 2019, 2020, 2021, 2022), 2),
+           `DFG` = c(42.6, 44.0, 48.6, 48.8, 49.6,
+                      48.3, 48.2, 47.7, 46.6, 43.2)) |>
+  rename(`DFG%` = DFG) |>
+  arrange(Season) |>
+  ggplot(aes(Season, `DFG%`)) +
+  geom_bar(aes(fill = Player), stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("darkorange1", "navyblue")) +
+  theme_minimal() +
+  labs(x = NULL, title = "Defensive FG% from 2018 to 2022", fill = NULL) +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.y = element_blank())
+```
+
+```{r}
+readxl::read_excel("miracle league sub list.xlsx") |>
+  filter(Team %in% c("Thunder", "Emeralds"))
+```
 
 
 
