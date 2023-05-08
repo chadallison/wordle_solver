@@ -1,0 +1,177 @@
+---
+output: github_document
+---
+
+```{r setup chunk, message = F, warning = F, include = F}
+library(tidyverse)
+library(lubridate)
+library(magrittr)
+
+past.solutions = read.table("all_wordle_solutions.txt") |>
+  set_colnames(c("month", "day", "year", "x", "day_num", "word")) |>
+  mutate(word = str_to_lower(word)) |>
+  mutate(month = case_when(month == "Jan" ~ 1, month == "Feb" ~ 2, month == "Mar" ~ 3,
+                           month == "Apr" ~ 4, month == "May" ~ 5, month == "Jun" ~ 6,
+                           month == "Jul" ~ 7, month == "Aug" ~ 8, month == "Sep" ~ 9,
+                           month == "Oct" ~ 10, month == "Nov" ~ 11, month == "Dec" ~ 12),
+         date = mdy(paste(month, day, year, sep = "-"))) |>
+  filter(date <= Sys.Date() - 1) |>
+  pull(word)
+
+df = data.frame(scan("wordle_answers.txt", character(), quote = "")) |>
+  set_colnames("word") |>
+  mutate(one = substr(word, 1, 1),
+         two = substr(word, 2, 2),
+         three = substr(word, 3, 3),
+         four = substr(word, 4, 4),
+         five = substr(word, 5, 5)) |>
+  filter(!word %in% past.solutions)
+
+alphabet = c("a", "b", "c", "d", "e",
+             "f", "g", "h", "i", "j",
+             "k", "l", "m", "n", "o",
+             "p", "q", "r", "s", "t",
+             "u", "v", "w", "x", "y", "z")
+```
+
+```{r modify chunk}
+no_raw = c()
+no = rep(NA, nchar(no_raw))
+for (i in 1:nchar(no_raw)) no[i] = substr(no_raw, i, i)
+
+yes_raw = c()
+yes = rep(NA, nchar(yes_raw))
+for (i in 1:nchar(yes_raw)) yes[i] = substr(yes_raw, i, i)
+
+df = df |>
+  filter(!one %in% no,
+         !two %in% no,
+         !three %in% no,
+         !four %in% no,
+         !five %in% no)
+
+for (i in 1:length(yes)) df = filter(df, str_detect(word, yes[i]))
+
+words = df |>
+  pull(word)
+
+paste("possible words:", length(words))
+paste("random word:", sample(words, 1))
+
+"-----------------------------------"
+
+non.repeats = df |>
+  filter(one != two & one != three & one != four & one != five,
+         two != three & two != four & two != five,
+         three != four & three != five,
+         four != five) |>
+  pull(word)
+
+paste("possible non-repeating words:", length(non.repeats))
+
+if (length(non.repeats) > 0) {
+  paste("random non-repeating word:", sample(non.repeats, 1))
+} else {
+  print("no non-repeating words")
+}
+```
+
+```{r}
+alphabet = c("a", "b", "c", "d", "e",
+             "f", "g", "h", "i", "j",
+             "k", "l", "m", "n", "o",
+             "p", "q", "r", "s", "t",
+             "u", "v", "w", "x", "y", "z")
+
+freq = data.frame(letter = rep(NA, 26), frequency = rep(NA, 26))
+
+for (i in 1:length(alphabet)) {
+  
+  letter = alphabet[i]
+  
+  num = df |>
+    mutate(count = str_detect(word, letter)) |>
+    summarise(sum = sum(count)) |>
+    pull(sum)
+  
+  freq$letter[i] = letter
+  freq$frequency[i] = num
+  
+}
+
+freq |>
+  arrange(desc(frequency))
+```
+
+```{r most common for each letter}
+first = df |>
+  count(one) |>
+  arrange(desc(n)) |>
+  head(1) |>
+  pull(one)
+
+paste("most common first:", first)
+
+second = df |>
+  count(two) |>
+  arrange(desc(n)) |>
+  head(1) |>
+  pull(two)
+
+paste("most common second:", second)
+
+third = df |>
+  count(three) |>
+  arrange(desc(n)) |>
+  head(1) |>
+  pull(three)
+
+paste("most common third:", third)
+
+fourth = df |>
+  count(four) |>
+  arrange(desc(n)) |>
+  head(1) |>
+  pull(four)
+
+paste("most common fourth:", fourth)
+
+fifth = df |>
+  count(five) |>
+  arrange(desc(n)) |>
+  head(1) |>
+  pull(five)
+
+paste("most common fifth:", fifth)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
